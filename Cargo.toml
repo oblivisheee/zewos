@@ -1,0 +1,7 @@
+[workspace]
+members = ["zewos", "zewos-core", "zewos-dir", "zewos-storage", "zewos-tests"]
+resolver = "2"
+
+[profile.release]
+lto = true
+codegen-units = 1

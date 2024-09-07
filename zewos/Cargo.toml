@@ -1,0 +1,12 @@
+[package]
+name = "zewos"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+zewos-core = { path = "../zewos-core" }
+zewos-dir = { path = "../zewos-dir" }
+zewos-storage = { path = "../zewos-storage" }
+
+[dev-dependencies]
+tempfile = "3.12.0"

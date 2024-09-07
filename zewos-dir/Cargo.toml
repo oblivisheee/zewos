@@ -1,0 +1,11 @@
+[package]
+name = "zewos-dir"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+base64 = "0.22.1"
+zewos-core = { path = "../zewos-core" }
+
+[dev-dependencies]
+tempfile = "3.12.0"
