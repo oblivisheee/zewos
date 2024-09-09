@@ -32,11 +32,13 @@ impl FileHandler {
         let mut file = File::open(&self.path)?;
         let mut contents = Vec::new();
         file.read_to_end(&mut contents)?;
+
         Ok(contents)
     }
 
     pub fn write(&self, contents: &[u8]) -> io::Result<()> {
         let mut file = File::create(&self.path)?;
+
         file.write_all(contents)
     }
 }
