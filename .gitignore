@@ -1,3 +1,4 @@
 /target
 zewos-storage/src/table.rs
 /zewos-tests
+.DS_Store
