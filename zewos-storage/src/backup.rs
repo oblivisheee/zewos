@@ -93,13 +93,13 @@ impl Backup {
     }
 
     pub fn serialize(&self, level: Option<usize>) -> Result<(Vec<u8>, Vec<u8>), BackupError> {
-        let metadata_json = serde_json::to_string(&self.metadata)?;
+        let metadata_json = serde_json::to_vec(&self.metadata)?;
 
         let object_data = bincode::serialize(&self.objects)?;
         let level_compression = level.unwrap_or(3);
         let compressed = compress_bytes(&object_data, level_compression.try_into().unwrap())?;
 
-        Ok((compressed, metadata_json.as_bytes().to_vec()))
+        Ok((compressed, metadata_json))
     }
 
     pub fn deserialize(metadata: &[u8], data: &[u8]) -> Result<Self, BackupError> {
