@@ -8,8 +8,10 @@ pub struct Storage {
 
 impl Storage {
     pub fn init(origin: &str) -> Result<Self, StorageError> {
-        //TODO: If path exists than load it.
         let path = std::path::Path::new(origin).join(".zewos");
+        if path.exists() {
+            return Self::load(path.to_str().unwrap());
+        }
         let config = CacheConfig::default();
         let index = StorageIndex::new(config)?;
         let dir = Directory::new(path.to_str().unwrap());
