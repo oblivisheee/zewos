@@ -33,10 +33,14 @@ impl Directory {
     }
     fn generate_files(origin: &PathBuf) -> Vec<File> {
         let objects = PathBuf::from("objects").join("objects.bin");
-        [objects, PathBuf::from("b_metadata.zewos")]
-            .iter()
-            .map(|entry| File::new(origin.join(entry)))
-            .collect()
+        [
+            objects,
+            PathBuf::from("b_metadata.zewos"),
+            PathBuf::from("b_config.zewos"),
+        ]
+        .iter()
+        .map(|entry| File::new(origin.join(entry)))
+        .collect()
     }
 
     pub fn get_handler(&self) -> &FolderHandler {
@@ -56,6 +60,9 @@ impl Directory {
 
     pub fn backup_metadata_file(&self) -> &File {
         self.files.get(1).unwrap()
+    }
+    pub fn backup_config_file(&self) -> &File {
+        self.files.get(2).unwrap()
     }
 
     pub fn exists(&self) -> bool {

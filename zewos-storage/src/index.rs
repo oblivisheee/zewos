@@ -1,6 +1,6 @@
 use super::errors::StorageError;
 use super::{
-    backup::{Backup, BackupMetadata},
+    backup::{Backup, BackupConfig, BackupMetadata},
     cache::{CacheConfig, CacheManager},
     object::Object,
 };
@@ -12,8 +12,11 @@ pub struct StorageIndex {
 }
 
 impl StorageIndex {
-    pub fn new(cache_config: CacheConfig) -> Result<Self, StorageError> {
-        let backup = Arc::new(RwLock::new(Backup::new()));
+    pub fn new(
+        cache_config: CacheConfig,
+        backup_config: BackupConfig,
+    ) -> Result<Self, StorageError> {
+        let backup = Arc::new(RwLock::new(Backup::with_config(backup_config)));
         let cache = Arc::new(RwLock::new(CacheManager::new(cache_config)));
 
         Ok(Self { backup, cache })
@@ -54,21 +57,27 @@ impl StorageIndex {
         Ok(result.map(|obj| obj.to_bytes()))
     }
 
-    pub fn serialize_backup(
-        &self,
-        compression_level: Option<usize>,
-    ) -> Result<(Vec<u8>, Vec<u8>), StorageError> {
+    pub fn serialize_backup(&self) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>), StorageError> {
         let backup = self.backup.read().unwrap();
-        let (data, metadata) = backup.serialize(compression_level)?;
-        Ok((data, metadata))
+        let (data, metadata, config) = backup.serialize()?;
+        Ok((data, metadata, config))
+    }
+    pub fn serialize_backup_custom(
+        &self,
+        level: Option<usize>,
+    ) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>), StorageError> {
+        let backup = self.backup.read().unwrap();
+        let (data, metadata, config) = backup.serialize_custom(level)?;
+        Ok((data, metadata, config))
     }
 
     pub fn deserialize_backup(
         data: Vec<u8>,
         metadata: Vec<u8>,
+        config: Vec<u8>,
     ) -> Result<StorageIndex, StorageError> {
         let backup = if !data.is_empty() && !metadata.is_empty() {
-            Backup::deserialize(&metadata, &data)?
+            Backup::deserialize(&metadata, &data, &config)?
         } else {
             Backup::new()
         };
@@ -82,17 +91,22 @@ impl StorageIndex {
 
     pub fn sync_cache(&self) -> Result<(), StorageError> {
         let backup = self.backup.read().unwrap();
-        let mut cache = self.cache.write().unwrap();
+        let cache = self.cache.write().unwrap();
         cache.clear();
         for entry in backup.get_objects().iter() {
             let (key, object) = entry.pair();
-            cache.insert(key.clone(), object.clone());
+            cache.insert(key.clone(), object.clone())?;
         }
         Ok(())
     }
 
-    pub fn update_backup(&self, data: Vec<u8>, metadata: Vec<u8>) -> Result<(), StorageError> {
-        let backup = Backup::deserialize(&metadata, &data)?;
+    pub fn update_backup(
+        &self,
+        data: Vec<u8>,
+        metadata: Vec<u8>,
+        config: Vec<u8>,
+    ) -> Result<(), StorageError> {
+        let backup = Backup::deserialize(&metadata, &data, &config)?;
         self.backup.write().unwrap().update(backup);
         Ok(())
     }
@@ -163,7 +177,7 @@ mod tests {
 
     #[test]
     fn test_insert_and_get() {
-        let index = StorageIndex::new(CacheConfig::default()).unwrap();
+        let index = StorageIndex::new(CacheConfig::default(), BackupConfig::default()).unwrap();
         let key = b"test_key".to_vec();
         let value = b"test_value".to_vec();
 
@@ -184,7 +198,7 @@ mod tests {
 
     #[test]
     fn test_remove() {
-        let index = StorageIndex::new(CacheConfig::default()).unwrap();
+        let index = StorageIndex::new(CacheConfig::default(), BackupConfig::default()).unwrap();
         let key = b"test_key".to_vec();
         let value = b"test_value".to_vec();
 
@@ -198,7 +212,7 @@ mod tests {
 
     #[test]
     fn test_serialize_and_deserialize() {
-        let index = StorageIndex::new(CacheConfig::default()).unwrap();
+        let index = StorageIndex::new(CacheConfig::default(), BackupConfig::default()).unwrap();
         let key1 = b"test_key1".to_vec();
         let value1 = b"test_value1".to_vec();
         let key2 = b"test_key2".to_vec();
@@ -207,8 +221,8 @@ mod tests {
         index.insert(value1.clone(), key1.clone()).unwrap();
         index.insert(value2.clone(), key2.clone()).unwrap();
 
-        let (data, metadata) = index.serialize_backup(None).unwrap();
-        let loaded_index = StorageIndex::deserialize_backup(data, metadata).unwrap();
+        let (data, metadata, config) = index.serialize_backup_custom(None).unwrap();
+        let loaded_index = StorageIndex::deserialize_backup(data, metadata, config).unwrap();
 
         assert_eq!(loaded_index.get(&key1).unwrap(), value1);
         assert_eq!(loaded_index.get(&key2).unwrap(), value2);
@@ -216,7 +230,7 @@ mod tests {
 
     #[test]
     fn test_clear_cache() {
-        let index = StorageIndex::new(CacheConfig::default()).unwrap();
+        let index = StorageIndex::new(CacheConfig::default(), BackupConfig::default()).unwrap();
         let key = b"test_key".to_vec();
         let value = b"test_value".to_vec();
 
@@ -229,7 +243,7 @@ mod tests {
 
     #[test]
     fn test_sync_cache() {
-        let index = StorageIndex::new(CacheConfig::default()).unwrap();
+        let index = StorageIndex::new(CacheConfig::default(), BackupConfig::default()).unwrap();
         let key = b"test_key".to_vec();
         let value = b"test_value".to_vec();
 
@@ -246,7 +260,7 @@ mod tests {
 
     #[test]
     fn test_get_metadata() {
-        let index = StorageIndex::new(CacheConfig::default()).unwrap();
+        let index = StorageIndex::new(CacheConfig::default(), BackupConfig::default()).unwrap();
         let key = b"test_key".to_vec();
         let value = b"test_value".to_vec();
 
@@ -261,7 +275,7 @@ mod tests {
     fn test_evict_expired_cache() {
         let mut config = CacheConfig::default();
         config.ttl = std::time::Duration::from_secs(1);
-        let index = StorageIndex::new(config).unwrap();
+        let index = StorageIndex::new(CacheConfig::default(), BackupConfig::default()).unwrap();
         let key = b"test_key".to_vec();
         let value = b"test_value".to_vec();
 
@@ -284,7 +298,7 @@ mod tests {
 
     #[test]
     fn test_new_methods() {
-        let index = StorageIndex::new(CacheConfig::default()).unwrap();
+        let index = StorageIndex::new(CacheConfig::default(), BackupConfig::default()).unwrap();
         let key1 = b"test_key1".to_vec();
         let value1 = b"test_value1".to_vec();
         let key2 = b"test_key2".to_vec();

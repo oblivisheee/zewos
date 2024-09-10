@@ -35,15 +35,43 @@ impl BackupMetadata {
     }
 }
 
+#[derive(Clone, Serialize, Deserialize)]
+pub struct BackupConfig {
+    compression_level: Option<usize>,
+}
+
+impl BackupConfig {
+    pub fn new() -> Self {
+        Self {
+            compression_level: Some(3),
+        }
+    }
+
+    pub fn with_compression_level(mut self, level: usize) -> Self {
+        self.compression_level = Some(level);
+        self
+    }
+}
+impl Default for BackupConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub struct Backup {
     metadata: BackupMetadata,
     objects: Box<DashMap<Vec<u8>, Object>>,
     hash: Sha256,
-    backup_path: Option<PathBuf>,
+
+    config: BackupConfig,
 }
 
 impl Backup {
     pub fn new() -> Self {
+        Self::with_config(BackupConfig::new())
+    }
+
+    pub fn with_config(config: BackupConfig) -> Self {
         let metadata = BackupMetadata {
             creation_date: SystemTime::now(),
             last_modified: SystemTime::now(),
@@ -55,7 +83,8 @@ impl Backup {
             metadata,
             objects: Box::new(DashMap::new()),
             hash: Sha256::new(&[]),
-            backup_path: None,
+
+            config,
         }
     }
 
@@ -92,28 +121,38 @@ impl Backup {
         self.hash = backup.hash;
     }
 
-    pub fn serialize(&self, level: Option<usize>) -> Result<(Vec<u8>, Vec<u8>), BackupError> {
-        let metadata_json = serde_json::to_vec(&self.metadata)?;
-
-        let object_data = bincode::serialize(&self.objects)?;
-        let level_compression = level.unwrap_or(3);
-        let compressed = compress_bytes(&object_data, level_compression.try_into().unwrap())?;
-
-        Ok((compressed, metadata_json))
+    pub fn serialize(&self) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>), BackupError> {
+        let (compressed, metadata_json, config_json) =
+            self.serialize_custom(self.config.compression_level)?;
+        Ok((compressed, metadata_json, config_json))
     }
 
-    pub fn deserialize(metadata: &[u8], data: &[u8]) -> Result<Self, BackupError> {
+    pub fn deserialize(metadata: &[u8], data: &[u8], config: &[u8]) -> Result<Self, BackupError> {
         let metadata: BackupMetadata = serde_json::from_slice(metadata)?;
+        let config: BackupConfig = serde_json::from_slice(config)?;
         let decompressed = decompress_bytes(data)?;
         let objects: Box<DashMap<Vec<u8>, Object>> = bincode::deserialize(&decompressed)?;
         let mut backup = Self {
             metadata,
             objects,
             hash: Sha256::new(&[]),
-            backup_path: None,
+
+            config,
         };
         backup.update_hash()?;
         Ok(backup)
+    }
+    pub fn serialize_custom(
+        &self,
+        level: Option<usize>,
+    ) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>), BackupError> {
+        let metadata_json = serde_json::to_vec(&self.metadata)?;
+        let config_json = serde_json::to_vec(&self.config)?;
+        let object_data = bincode::serialize(&self.objects)?;
+
+        let compressed = compress_bytes(&object_data, level.unwrap_or(3).try_into().unwrap())?;
+
+        Ok((compressed, metadata_json, config_json))
     }
 
     pub fn get_metadata(&self) -> Result<BackupMetadata, BackupError> {
@@ -136,6 +175,14 @@ mod tests {
         let backup = Backup::new();
         assert_eq!(backup.metadata.object_count, 0);
         assert_eq!(backup.metadata.total_size, 0);
+    }
+
+    #[test]
+    fn test_backup_with_config() {
+        let config = BackupConfig::new().with_compression_level(5);
+
+        let backup = Backup::with_config(config);
+        assert_eq!(backup.config.compression_level, Some(5));
     }
 
     #[test]
@@ -171,8 +218,8 @@ mod tests {
             .insert(vec![1], Object::new(vec![4, 5, 6]).unwrap())
             .unwrap();
 
-        let (data, metadata) = backup.serialize(None).unwrap();
-        let deserialized = Backup::deserialize(&metadata, &data).unwrap();
+        let (data, metadata, config) = backup.serialize_custom(None).unwrap();
+        let deserialized = Backup::deserialize(&metadata, &data, &config).unwrap();
 
         assert_eq!(
             backup.metadata.object_count,

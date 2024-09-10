@@ -1,6 +1,6 @@
 use zewos_dir::dir::Directory;
 use zewos_dir::logs::LogsManager;
-use zewos_storage::{errors::StorageError, CacheConfig, StorageIndex};
+use zewos_storage::{errors::StorageError, BackupConfig, CacheConfig, StorageIndex};
 
 pub struct Storage {
     index: StorageIndex,
@@ -14,8 +14,9 @@ impl Storage {
         if path.exists() {
             return Self::load(path.to_str().unwrap());
         }
-        let config = CacheConfig::default();
-        let index = StorageIndex::new(config)?;
+        let cache_config = CacheConfig::default();
+        let backup_config = BackupConfig::default();
+        let index = StorageIndex::new(cache_config, backup_config)?;
         let dir = Directory::new(path.to_str().unwrap());
         let mut logger = dir.clone().logger();
         logger.start_session()?;
@@ -28,9 +29,10 @@ impl Storage {
     }
 
     pub fn save(&mut self) -> std::io::Result<()> {
-        let (data, metadata) = self.index.serialize_backup(Some(3)).unwrap();
+        let (data, metadata, config) = self.index.serialize_backup().unwrap();
         self.dir.objs_file().write(&data).unwrap();
         self.dir.backup_metadata_file().write(&metadata).unwrap();
+        self.dir.backup_config_file().write(&config).unwrap();
         self.logger
             .add_log("zewos_storage", "save", "backup_created")?;
         Ok(())
@@ -40,7 +42,8 @@ impl Storage {
         let dir = Directory::new(origin);
         let data = dir.objs_file().read()?;
         let metadata = dir.backup_metadata_file().read()?;
-        let index = StorageIndex::deserialize_backup(data, metadata)?;
+        let config = dir.backup_config_file().read()?;
+        let index = StorageIndex::deserialize_backup(data, metadata, config)?;
         let mut logger = dir.clone().logger();
         logger.start_session()?;
         logger.add_log("zewos_init", "load", "storage_loaded")?;
