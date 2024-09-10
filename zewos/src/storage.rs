@@ -1,7 +1,7 @@
+use super::config::ZewosConfig;
 use zewos_dir::dir::Directory;
 use zewos_dir::logs::LogsManager;
 use zewos_storage::{errors::StorageError, BackupConfig, CacheConfig, StorageIndex};
-
 pub struct Storage {
     index: StorageIndex,
     dir: Directory,
@@ -10,15 +10,18 @@ pub struct Storage {
 
 impl Storage {
     pub fn init(origin: &str) -> Result<Self, StorageError> {
+        Self::init_with_config(origin, ZewosConfig::default())
+    }
+    pub fn init_with_config(origin: &str, config: ZewosConfig) -> Result<Self, StorageError> {
         let path = std::path::Path::new(origin).join(".zewos");
         if path.exists() {
             return Self::load(path.to_str().unwrap());
         }
-        let cache_config = CacheConfig::default();
-        let backup_config = BackupConfig::default();
-        let index = StorageIndex::new(cache_config, backup_config)?;
+
+        let index = StorageIndex::new(config.cache_config, config.backup_config)?;
         let dir = Directory::new(path.to_str().unwrap());
         let mut logger = dir.clone().logger();
+
         logger.start_session()?;
         logger.add_log("zewos_init", "init", "first_initialization")?;
         Ok(Self {

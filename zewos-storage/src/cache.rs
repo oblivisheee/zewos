@@ -26,6 +26,31 @@ impl Default for CacheConfig {
     }
 }
 
+impl CacheConfig {
+    pub fn new(max_size: usize, ttl: Duration, eviction_strategy: EvictionStrategy) -> Self {
+        Self {
+            max_size,
+            ttl,
+            eviction_strategy,
+        }
+    }
+
+    pub fn with_max_size(mut self, max_size: usize) -> Self {
+        self.max_size = max_size;
+        self
+    }
+
+    pub fn with_ttl(mut self, ttl: Duration) -> Self {
+        self.ttl = ttl;
+        self
+    }
+
+    pub fn with_eviction_strategy(mut self, eviction_strategy: EvictionStrategy) -> Self {
+        self.eviction_strategy = eviction_strategy;
+        self
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub enum EvictionStrategy {
     LeastRecentlyUsed,

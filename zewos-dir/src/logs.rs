@@ -42,6 +42,10 @@ impl LogsManager {
         action: &str,
         additional_info: &str,
     ) -> io::Result<()> {
+        if self.current_log.is_none() {
+            // Session hasn't activated. Either start it or you have logs turned off.
+            return Ok(());
+        }
         if let Some(log) = self.current_log.as_mut() {
             log.add_log(details, action, additional_info)?;
         }
