@@ -3,6 +3,7 @@ use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use zewos_core::permissions::PermissionsManager;
 
+#[derive(Clone)]
 pub struct FileHandler {
     pub path: PathBuf,
     permissions: PermissionsManager,
@@ -42,9 +43,9 @@ impl FileHandler {
         file.write_all(contents)
     }
 }
-
+#[derive(Clone)]
 pub struct FolderHandler {
-    path: PathBuf,
+    pub path: PathBuf,
     permissions: PermissionsManager,
 }
 

@@ -1,10 +1,14 @@
 use super::file::File;
 use super::handlers::FolderHandler;
+use super::logs::LogsManager;
 use std::path::PathBuf;
 
+#[derive(Clone)]
 pub struct Directory {
     handler: FolderHandler,
+    subfolders: Vec<FolderHandler>,
     files: Vec<File>,
+    logger: LogsManager,
 }
 
 impl Directory {
@@ -12,15 +16,24 @@ impl Directory {
         let path = path.into();
         let mut dir = Directory {
             handler: FolderHandler::new(path.clone()).unwrap(),
+            subfolders: Vec::new(),
             files: Vec::new(),
+            logger: LogsManager::new(path.clone()).unwrap(),
         };
         dir.create().unwrap();
+        dir.subfolders = Self::generate_folders(&path);
         dir.files = Self::generate_files(&path);
         dir
     }
-
+    fn generate_folders(origin: &PathBuf) -> Vec<FolderHandler> {
+        ["objects"]
+            .iter()
+            .map(|entry| FolderHandler::new(origin.join(entry)).unwrap())
+            .collect()
+    }
     fn generate_files(origin: &PathBuf) -> Vec<File> {
-        ["objs.ze", "meta.ze"]
+        let objects = PathBuf::from("objects").join("objects.bin");
+        [objects, PathBuf::from("b_metadata.zewos")]
             .iter()
             .map(|entry| File::new(origin.join(entry)))
             .collect()
@@ -28,6 +41,9 @@ impl Directory {
 
     pub fn get_handler(&self) -> &FolderHandler {
         &self.handler
+    }
+    pub fn logger(&self) -> LogsManager {
+        self.logger.clone()
     }
 
     pub fn get_files(&self) -> &[File] {
@@ -38,7 +54,7 @@ impl Directory {
         self.files.get(0).unwrap()
     }
 
-    pub fn metadata_file(&self) -> &File {
+    pub fn backup_metadata_file(&self) -> &File {
         self.files.get(1).unwrap()
     }
 

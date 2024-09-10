@@ -2,6 +2,8 @@ use super::handlers::FileHandler;
 use std::fs::{self, OpenOptions};
 use std::io::{self, Seek, SeekFrom, Write};
 use std::path::PathBuf;
+
+#[derive(Clone)]
 pub struct File {
     handler: FileHandler,
 }
