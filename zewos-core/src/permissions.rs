@@ -12,7 +12,7 @@ use windows::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
 use std::fs::{self, File};
 use std::io;
 use std::path::Path;
-
+#[derive(Clone)]
 pub struct PermissionsManager {
     storage_path: String,
     #[cfg(not(windows))]
