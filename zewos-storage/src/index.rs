@@ -67,7 +67,11 @@ impl StorageIndex {
         data: Vec<u8>,
         metadata: Vec<u8>,
     ) -> Result<StorageIndex, StorageError> {
-        let backup = Backup::deserialize(&metadata, &data)?;
+        let backup = if !data.is_empty() && !metadata.is_empty() {
+            Backup::deserialize(&metadata, &data)?
+        } else {
+            Backup::new()
+        };
         let cache = CacheManager::new(CacheConfig::default());
         cache.load_from_backup(&backup)?;
         Ok(Self {
