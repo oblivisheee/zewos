@@ -36,7 +36,7 @@ impl Log {
     }
     pub fn serialize(&self) -> String {
         format!(
-            "{} {}:{}:{}",
+            "[{}] {}:{}:{}",
             self.timestamp.format("%H:%M:%S"),
             self.action,
             self.details,
