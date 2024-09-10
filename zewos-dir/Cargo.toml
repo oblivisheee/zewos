@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 base64 = "0.22.1"
+chrono = { version = "0.4.38", features = ["serde"] }
 zewos-core = { path = "../zewos-core" }
 
 [dev-dependencies]
