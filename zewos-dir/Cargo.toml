@@ -2,9 +2,12 @@
 name = "zewos-dir"
 version = "0.1.0"
 edition = "2021"
+authors = ["Oleg Pogoraev <molniya213y@gmail.com>"]
+description = "Directory for the Zewos project"
+license = "Apache-2.0"
+repository = "https://github.com/oblivisheee/zewos/tree/master/zewos-dir"
 
 [dependencies]
-base64 = "0.22.1"
 chrono = { version = "0.4.38", features = ["serde"] }
 zewos-core = { path = "../zewos-core" }
 

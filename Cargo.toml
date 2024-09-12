@@ -1,7 +1,20 @@
 [workspace]
-members = ["zewos", "zewos-core", "zewos-dir", "zewos-storage"]
+members = ["zewos", "zewos-core", "zewos-dir", "zewos-storage", "zewos-tests"]
+default-members = ["zewos"]
 resolver = "2"
 
 [profile.release]
 lto = true
 codegen-units = 1
+opt-level = 3
+debug = false
+panic = "abort"
+incremental = false
+
+[profile.dev]
+opt-level = 0
+debug = true
+
+[profile.test]
+opt-level = 0
+debug = true

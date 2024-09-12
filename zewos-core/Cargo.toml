@@ -2,11 +2,13 @@
 name = "zewos-core"
 version = "0.1.0"
 edition = "2021"
+authors = ["Oleg Pogoraev <molniya213y@gmail.com>"]
+description = "Core of the Zewos project"
+license = "Apache-2.0"
+repository = "https://github.com/oblivisheee/zewos/tree/master/zewos-core"
 
 [dependencies]
 thiserror = "1.0.63"
-toml = "0.8.19"
-crossbeam = "0.8.4"
 
 ecdsa = { version = "0.16.9", features = ["signing", "verifying"] }
 p256 = "0.13.2"

@@ -2,6 +2,10 @@
 name = "zewos"
 version = "0.1.0"
 edition = "2021"
+authors = ["Oleg Pogoraev <molniya213y@gmail.com>"]
+description = "Main library of the Zewos project"
+license = "Apache-2.0"
+repository = "https://github.com/oblivisheee/zewos/"
 
 [dependencies]
 zewos-core = { path = "../zewos-core" }

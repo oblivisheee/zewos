@@ -2,7 +2,7 @@
 name = "zewos-storage"
 version = "0.1.0"
 edition = "2021"
-authors = ["Oblivishee <molniya213y@example.com>"]
+authors = ["Oblivishee <molniya213y@gmail.com>"]
 description = "A storage library for the Zewos project"
 license = "Apache-2.0"
 repository = "https://github.com/oblivishee/zewos/tree/master/zewos-storage"
