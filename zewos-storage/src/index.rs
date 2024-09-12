@@ -75,13 +75,14 @@ impl StorageIndex {
         data: Vec<u8>,
         metadata: Vec<u8>,
         config: Vec<u8>,
+        cache_config: CacheConfig,
     ) -> Result<StorageIndex, StorageError> {
         let backup = if !data.is_empty() && !metadata.is_empty() {
             Backup::deserialize(&metadata, &data, &config)?
         } else {
             Backup::new()
         };
-        let cache = CacheManager::new(CacheConfig::default());
+        let cache = CacheManager::new(cache_config);
         cache.load_from_backup(&backup)?;
         Ok(Self {
             backup: Arc::new(RwLock::new(backup)),
@@ -222,7 +223,9 @@ mod tests {
         index.insert(value2.clone(), key2.clone()).unwrap();
 
         let (data, metadata, config) = index.serialize_backup_custom(None).unwrap();
-        let loaded_index = StorageIndex::deserialize_backup(data, metadata, config).unwrap();
+        let loaded_index =
+            StorageIndex::deserialize_backup(data, metadata, config, CacheConfig::default())
+                .unwrap();
 
         assert_eq!(loaded_index.get(&key1).unwrap(), value1);
         assert_eq!(loaded_index.get(&key2).unwrap(), value2);
