@@ -15,7 +15,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-zewos = "0.1.0"
+zewos = { git = "https://github.com/oblivisheee/zewos" }
 ```
 
 ## Usage
