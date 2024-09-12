@@ -8,6 +8,7 @@ license = "Apache-2.0"
 repository = "https://github.com/oblivisheee/zewos/tree/master/zewos-dir"
 
 [dependencies]
+aes-gcm = "0.10.3"
 chrono = { version = "0.4.38", features = ["serde"] }
 zewos-core = { path = "../zewos-core" }
 
