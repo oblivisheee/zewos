@@ -1,7 +1,7 @@
 use super::config::ZewosConfig;
 use zewos_dir::dir::Directory;
 use zewos_dir::logs::LogsManager;
-use zewos_storage::{errors::StorageError, BackupConfig, CacheConfig, StorageIndex};
+use zewos_storage::{errors::StorageError, StorageIndex};
 pub struct Storage {
     index: StorageIndex,
     dir: Directory,
@@ -18,11 +18,12 @@ impl Storage {
             return Self::load(path.to_str().unwrap());
         }
 
-        let index = StorageIndex::new(config.cache_config, config.backup_config)?;
+        let index = StorageIndex::new(config.cache_config, config.clone().backup_config)?;
         let dir = Directory::new(path.to_str().unwrap());
         let mut logger = dir.clone().logger();
 
         logger.start_session()?;
+
         logger.add_log("zewos_init", "init", "first_initialization")?;
         Ok(Self {
             index,
@@ -34,8 +35,8 @@ impl Storage {
     pub fn save(&mut self) -> std::io::Result<()> {
         let (data, metadata, config) = self.index.serialize_backup().unwrap();
         self.dir.objs_file().write(&data).unwrap();
-        self.dir.backup_metadata_file().write(&metadata).unwrap();
-        self.dir.backup_config_file().write(&config).unwrap();
+        self.dir.metadata_file().write(&metadata).unwrap();
+        self.dir.config_file().write(&config).unwrap();
         self.logger
             .add_log("zewos_storage", "save", "backup_created")?;
         Ok(())
@@ -44,11 +45,13 @@ impl Storage {
     pub fn load(origin: &str) -> Result<Self, StorageError> {
         let dir = Directory::new(origin);
         let data = dir.objs_file().read()?;
-        let metadata = dir.backup_metadata_file().read()?;
-        let config = dir.backup_config_file().read()?;
+        let metadata = dir.metadata_file().read()?;
+        let config = dir.config_file().read()?;
         let index = StorageIndex::deserialize_backup(data, metadata, config)?;
         let mut logger = dir.clone().logger();
+
         logger.start_session()?;
+
         logger.add_log("zewos_init", "load", "storage_loaded")?;
         Ok(Self { index, dir, logger })
     }

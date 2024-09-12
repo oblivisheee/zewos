@@ -7,35 +7,10 @@ use super::{
     object::Object,
 };
 use serde::{Deserialize, Serialize};
-use std::{path::PathBuf, time::SystemTime};
+use std::time::SystemTime;
+pub use zewos_core::metadata::BackupMetadata;
 
-#[derive(Serialize, Deserialize, Clone)]
-pub struct BackupMetadata {
-    creation_date: SystemTime,
-    last_modified: SystemTime,
-    object_count: usize,
-    total_size: usize,
-}
-
-impl BackupMetadata {
-    pub fn creation_date(&self) -> SystemTime {
-        self.creation_date
-    }
-
-    pub fn last_modified(&self) -> SystemTime {
-        self.last_modified
-    }
-
-    pub fn object_count(&self) -> usize {
-        self.object_count
-    }
-
-    pub fn total_size(&self) -> usize {
-        self.total_size
-    }
-}
-
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Copy, Serialize, Deserialize)]
 pub struct BackupConfig {
     compression_level: Option<usize>,
 }
@@ -72,12 +47,7 @@ impl Backup {
     }
 
     pub fn with_config(config: BackupConfig) -> Self {
-        let metadata = BackupMetadata {
-            creation_date: SystemTime::now(),
-            last_modified: SystemTime::now(),
-            object_count: 0,
-            total_size: 0,
-        };
+        let metadata = BackupMetadata::new(0, config.compression_level);
 
         Self {
             metadata,
@@ -92,7 +62,7 @@ impl Backup {
         let result = self.objects.insert(k, v.clone());
         self.metadata.object_count += 1;
         self.metadata.total_size += v.len();
-        self.metadata.last_modified = SystemTime::now();
+        self.metadata.last_modified = chrono::Utc::now();
         self.update_hash()?;
         Ok(result)
     }
@@ -110,7 +80,7 @@ impl Backup {
         if let Some((_, obj)) = removed.clone() {
             self.metadata.object_count -= 1;
             self.metadata.total_size -= obj.len();
-            self.metadata.last_modified = SystemTime::now();
+            self.metadata.last_modified = chrono::Utc::now();
             self.update_hash()?;
         }
         Ok(removed.map(|(_, obj)| obj))
@@ -247,9 +217,9 @@ mod tests {
             .unwrap();
 
         let metadata = backup.get_metadata().unwrap();
-        assert_eq!(metadata.creation_date(), creation_time);
-        assert!(metadata.last_modified() > creation_time);
-        assert_eq!(metadata.object_count(), 1);
-        assert_eq!(metadata.total_size(), 3);
+        assert_eq!(metadata.creation_date, creation_time);
+        assert!(metadata.last_modified > creation_time);
+        assert_eq!(metadata.object_count, 1);
+        assert_eq!(metadata.total_size, 3);
     }
 }

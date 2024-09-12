@@ -35,8 +35,8 @@ impl Directory {
         let objects = PathBuf::from("objects").join("objects.bin");
         [
             objects,
-            PathBuf::from("b_metadata.zewos"),
-            PathBuf::from("b_config.zewos"),
+            PathBuf::from("metadata.zewos"),
+            PathBuf::from("config.zewos"),
         ]
         .iter()
         .map(|entry| File::new(origin.join(entry)))
@@ -58,10 +58,10 @@ impl Directory {
         self.files.get(0).unwrap()
     }
 
-    pub fn backup_metadata_file(&self) -> &File {
+    pub fn metadata_file(&self) -> &File {
         self.files.get(1).unwrap()
     }
-    pub fn backup_config_file(&self) -> &File {
+    pub fn config_file(&self) -> &File {
         self.files.get(2).unwrap()
     }
 

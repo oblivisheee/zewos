@@ -1,4 +1,5 @@
 use zewos_storage::{BackupConfig, CacheConfig};
+#[derive(Clone, Copy)]
 pub struct ZewosConfig {
     pub logging: bool,
     pub backup_config: BackupConfig,

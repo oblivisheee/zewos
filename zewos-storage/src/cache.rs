@@ -9,7 +9,7 @@ pub struct CacheEntry {
     last_accessed: Instant,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Ord, PartialOrd)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct CacheConfig {
     pub max_size: usize,
     pub ttl: Duration,
@@ -51,7 +51,7 @@ impl CacheConfig {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Ord, PartialOrd)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub enum EvictionStrategy {
     LeastRecentlyUsed,
     FirstInFirstOut,

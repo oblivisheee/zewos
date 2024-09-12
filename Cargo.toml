@@ -1,5 +1,5 @@
 [workspace]
-members = ["zewos", "zewos-core", "zewos-dir", "zewos-storage", "zewos-tests"]
+members = ["zewos", "zewos-core", "zewos-dir", "zewos-storage"]
 resolver = "2"
 
 [profile.release]

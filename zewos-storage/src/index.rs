@@ -267,8 +267,8 @@ mod tests {
         index.insert(value.clone(), key.clone()).unwrap();
 
         let metadata = index.get_metadata().unwrap();
-        assert_eq!(metadata.object_count(), 1);
-        assert_eq!(metadata.total_size(), value.len());
+        assert_eq!(metadata.object_count, 1);
+        assert_eq!(metadata.total_size, value.len());
     }
 
     #[test]
