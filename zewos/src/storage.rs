@@ -15,14 +15,16 @@ impl Storage {
     pub fn init_with_config(origin: &str, config: ZewosConfig) -> Result<Self, StorageError> {
         let path = std::path::Path::new(origin).join(".zewos");
         if path.exists() {
-            return Self::load(path.to_str().unwrap());
+            return Self::load(path.to_str().unwrap(), config);
         }
 
         let index = StorageIndex::new(config.cache_config, config.clone().backup_config)?;
         let dir = Directory::new(path.to_str().unwrap());
         let mut logger = dir.clone().logger();
 
-        logger.start_session()?;
+        if config.logging {
+            logger.start_session()?;
+        }
 
         logger.add_log("zewos_init", "init", "first_initialization")?;
         Ok(Self {
@@ -42,15 +44,17 @@ impl Storage {
         Ok(())
     }
 
-    pub fn load(origin: &str) -> Result<Self, StorageError> {
+    pub fn load(origin: &str, config: ZewosConfig) -> Result<Self, StorageError> {
         let dir = Directory::new(origin);
         let data = dir.objs_file().read()?;
         let metadata = dir.metadata_file().read()?;
-        let config = dir.config_file().read()?;
-        let index = StorageIndex::deserialize_backup(data, metadata, config)?;
+        let backup_config = dir.config_file().read()?;
+        let index =
+            StorageIndex::deserialize_backup(data, metadata, backup_config, config.cache_config)?;
         let mut logger = dir.clone().logger();
-
-        logger.start_session()?;
+        if config.logging {
+            logger.start_session()?;
+        }
 
         logger.add_log("zewos_init", "load", "storage_loaded")?;
         Ok(Self { index, dir, logger })
@@ -157,7 +161,7 @@ mod tests {
         let value = vec![1, 2, 3];
         storage.insert(key.clone(), value.clone()).unwrap();
 
-        let mut loaded_storage = Storage::load(origin).unwrap();
+        let mut loaded_storage = Storage::load(origin, ZewosConfig::default()).unwrap();
 
         assert_eq!(loaded_storage.get(&key).unwrap(), value);
     }
