@@ -1,12 +1,14 @@
+use super::encrypt::{Aes256Gcm, AES};
 use std::fs::{self, File};
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use zewos_core::permissions::PermissionsManager;
-
+use zewos_core::{derive::Deriver, fingerprint::SystemFingerprint};
 #[derive(Clone)]
 pub struct FileHandler {
     pub path: PathBuf,
     permissions: PermissionsManager,
+    aes: AES<Aes256Gcm>,
 }
 
 impl FileHandler {
@@ -25,11 +27,27 @@ impl FileHandler {
         } else {
             permissions.create_file_with_permissions(path.to_str().unwrap_or_default())?;
         }
-
-        Ok(FileHandler { path, permissions })
+        let system_fingerprint = SystemFingerprint::new();
+        let key = system_fingerprint.generate_fingerprint();
+        let deriver = Deriver::new(None, path.to_str().unwrap().as_bytes().to_vec());
+        let key = deriver.derive_key(&key);
+        let aes = AES::<Aes256Gcm>::new(key);
+        Ok(FileHandler {
+            path,
+            permissions,
+            aes,
+        })
     }
 
     pub fn read(&self) -> io::Result<Vec<u8>> {
+        let mut file = File::open(&self.path)?;
+        let mut contents = Vec::new();
+        file.read_to_end(&mut contents)?;
+        let contents = self.aes.decrypt(&contents).unwrap();
+
+        Ok(contents)
+    }
+    pub fn read_no_decrypt(&self) -> io::Result<Vec<u8>> {
         let mut file = File::open(&self.path)?;
         let mut contents = Vec::new();
         file.read_to_end(&mut contents)?;
@@ -39,7 +57,11 @@ impl FileHandler {
 
     pub fn write(&self, contents: &[u8]) -> io::Result<()> {
         let mut file = File::create(&self.path)?;
-
+        let contents = self.aes.encrypt(contents, None).unwrap();
+        file.write_all(contents.as_slice())
+    }
+    pub fn write_no_encrypt(&self, contents: &[u8]) -> io::Result<()> {
+        let mut file = File::create(&self.path)?;
         file.write_all(contents)
     }
 }

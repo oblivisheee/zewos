@@ -83,6 +83,6 @@ impl LogFile {
 
     pub fn save(&self) -> io::Result<()> {
         let serialized = self.logs.serialize();
-        self.file.write(serialized.as_bytes())
+        self.file.write_no_encrypt(serialized.as_bytes())
     }
 }

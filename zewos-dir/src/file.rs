@@ -22,6 +22,12 @@ impl File {
     pub fn write(&self, contents: &[u8]) -> io::Result<()> {
         self.handler.write(contents)
     }
+    pub fn write_no_encrypt(&self, contents: &[u8]) -> io::Result<()> {
+        self.handler.write_no_encrypt(contents)
+    }
+    pub fn read_no_decrypt(&self) -> io::Result<Vec<u8>> {
+        self.handler.read_no_decrypt()
+    }
 
     pub fn append(&self, contents: &str) -> io::Result<()> {
         let mut file = OpenOptions::new()
