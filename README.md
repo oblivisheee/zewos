@@ -73,3 +73,7 @@ This project is licensed under the [Apache-2.0 License](LICENSE).
 ## Disclaimer
 
 This is an early-stage prototype. USE AT YOUR OWN RISK.
+<<<<<<< Updated upstream
+=======
+At this stage of development the library is inherent to colossal changes and will not be back supported in the near future.
+>>>>>>> Stashed changes

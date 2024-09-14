@@ -1,13 +1,17 @@
 use chrono::Utc;
-use md5;
+
+use super::hash::Blake3;
 
 use sha3::{Digest, Sha3_256};
 
-use std::sync::Once;
 use sysinfo::{Components, Disks, System};
 use whoami;
 
-#[derive(Clone)]
+use lazy_static::lazy_static;
+use std::sync::Arc;
+use std::sync::Mutex;
+
+#[derive(Debug, Clone)]
 pub struct SystemFingerprint {
     machine_id: String,
     cpu_info: String,
@@ -18,18 +22,15 @@ pub struct SystemFingerprint {
 
 impl SystemFingerprint {
     pub fn new() -> Self {
-        static INIT: Once = Once::new();
-        static mut SYSTEM: Option<System> = None;
+        lazy_static! {
+            static ref SYSTEM: Arc<Mutex<System>> = Arc::new(Mutex::new({
+                let mut sys = System::new_all();
+                sys.refresh_all();
+                sys
+            }));
+        }
 
-        INIT.call_once(|| {
-            let mut sys = System::new_all();
-            sys.refresh_all();
-            unsafe {
-                SYSTEM = Some(sys);
-            }
-        });
-
-        let system = unsafe { SYSTEM.as_ref().unwrap() };
+        let system = SYSTEM.lock().unwrap();
 
         SystemFingerprint {
             machine_id: Self::get_machine_id(),
@@ -41,16 +42,15 @@ impl SystemFingerprint {
     }
 
     fn get_machine_id() -> String {
-        hex::encode(
-            md5::compute(format!(
-                "{:?}:{:?}:{:?}:{:?}",
-                whoami::fallible::hostname(),
-                whoami::realname(),
-                whoami::username(),
-                whoami::distro()
-            ))
-            .to_vec(),
-        )
+        let input = format!(
+            "{:?}:{:?}:{:?}:{:?}",
+            whoami::fallible::hostname(),
+            whoami::realname(),
+            whoami::username(),
+            whoami::distro()
+        );
+        let hash = Blake3::new(input.as_bytes());
+        hex::encode(hash.as_bytes())
     }
 
     fn get_cpu_info(system: &System) -> String {

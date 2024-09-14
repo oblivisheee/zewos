@@ -1454,14 +1454,53 @@ name = "zewos"
 version = "0.1.0"
 dependencies = [
  "tempfile",
- "zewos-core",
- "zewos-dir",
- "zewos-storage",
+ "zewos-core 0.1.0",
+ "zewos-dir 0.1.0",
+ "zewos-storage 0.1.0",
+]
+
+[[package]]
+name = "zewos"
+version = "0.1.0"
+source = "git+https://github.com/oblivisheee/zewos.git#225723be2e92ee1b6a65f99f7b53e412befd05d5"
+dependencies = [
+ "zewos-core 0.1.0 (git+https://github.com/oblivisheee/zewos.git)",
+ "zewos-dir 0.1.0 (git+https://github.com/oblivisheee/zewos.git)",
+ "zewos-storage 0.1.0 (git+https://github.com/oblivisheee/zewos.git)",
 ]
 
 [[package]]
 name = "zewos-core"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "blake3",
+ "chrono",
+ "ecdsa",
+ "hex",
+ "hkdf",
+ "lazy_static",
+ "md5",
+ "nix",
+ "p256",
+ "rand",
+ "raw-cpuid",
+ "serde",
+ "serde_json",
+ "sha3",
+ "sysinfo",
+ "tempfile",
+ "thiserror",
+ "uuid",
+ "whoami",
+ "windows 0.58.0",
+ "zeroize",
+]
+
+[[package]]
+name = "zewos-core"
+version = "0.1.0"
+source = "git+https://github.com/oblivisheee/zewos.git#225723be2e92ee1b6a65f99f7b53e412befd05d5"
 dependencies = [
  "anyhow",
  "blake3",
@@ -1493,7 +1532,17 @@ dependencies = [
  "aes-gcm",
  "chrono",
  "tempfile",
- "zewos-core",
+ "zewos-core 0.1.0",
+]
+
+[[package]]
+name = "zewos-dir"
+version = "0.1.0"
+source = "git+https://github.com/oblivisheee/zewos.git#225723be2e92ee1b6a65f99f7b53e412befd05d5"
+dependencies = [
+ "aes-gcm",
+ "chrono",
+ "zewos-core 0.1.0 (git+https://github.com/oblivisheee/zewos.git)",
 ]
 
 [[package]]
@@ -1509,7 +1558,25 @@ dependencies = [
  "serde_json",
  "sha3",
  "thiserror",
- "zewos-core",
+ "zewos-core 0.1.0",
+ "zstd",
+]
+
+[[package]]
+name = "zewos-storage"
+version = "0.1.0"
+source = "git+https://github.com/oblivisheee/zewos.git#225723be2e92ee1b6a65f99f7b53e412befd05d5"
+dependencies = [
+ "bincode",
+ "blake3",
+ "chrono",
+ "dashmap",
+ "hex",
+ "serde",
+ "serde_json",
+ "sha3",
+ "thiserror",
+ "zewos-core 0.1.0 (git+https://github.com/oblivisheee/zewos.git)",
  "zstd",
 ]
 
@@ -1518,7 +1585,7 @@ name = "zewos-tests"
 version = "0.1.0"
 dependencies = [
  "better-panic",
- "zewos",
+ "zewos 0.1.0 (git+https://github.com/oblivisheee/zewos.git)",
 ]
 
 [[package]]
