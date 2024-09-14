@@ -1,5 +1,5 @@
 [package]
-name = "zewos"
+name = "zewos-main"
 version = "0.1.0"
 edition = "2021"
 authors = ["Oleg Pogoraev <molniya213y@gmail.com>"]

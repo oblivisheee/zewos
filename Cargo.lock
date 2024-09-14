@@ -1453,7 +1453,6 @@ checksum = "ced3678a2879b30306d323f4542626697a464a97c0a07c9aebf7ebca65cd4dde"
 name = "zewos"
 version = "0.1.0"
 dependencies = [
- "tempfile",
  "zewos-core 0.1.0",
  "zewos-dir 0.1.0",
  "zewos-storage 0.1.0",
@@ -1543,6 +1542,16 @@ dependencies = [
  "aes-gcm",
  "chrono",
  "zewos-core 0.1.0 (git+https://github.com/oblivisheee/zewos.git)",
+]
+
+[[package]]
+name = "zewos-main"
+version = "0.1.0"
+dependencies = [
+ "tempfile",
+ "zewos-core 0.1.0",
+ "zewos-dir 0.1.0",
+ "zewos-storage 0.1.0",
 ]
 
 [[package]]
