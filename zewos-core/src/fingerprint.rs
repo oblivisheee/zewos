@@ -1,15 +1,12 @@
-use chrono::Utc;
-
 use super::hash::Blake3;
-
-use sha3::{Digest, Sha3_256};
-
-use sysinfo::{Components, Disks, System};
-use whoami;
-
+use chrono::Utc;
 use lazy_static::lazy_static;
+use sha3::{Digest, Sha3_256};
+use std::process::Command;
 use std::sync::Arc;
 use std::sync::Mutex;
+use sysinfo::{Components, Disks, System};
+use whoami;
 
 #[derive(Debug, Clone)]
 pub struct SystemFingerprint {
@@ -18,6 +15,7 @@ pub struct SystemFingerprint {
     os_info: String,
     disk_size: u64,
     components: String,
+    admin_data: String,
 }
 
 impl SystemFingerprint {
@@ -38,6 +36,7 @@ impl SystemFingerprint {
             os_info: Self::get_os_info(),
             disk_size: Self::get_disk_info(),
             components: Self::get_components_info(),
+            admin_data: Self::get_admin_data(),
         }
     }
 
@@ -57,6 +56,7 @@ impl SystemFingerprint {
         let cpu = system.cpus().first().unwrap();
         format!("{}", cpu.brand())
     }
+
     fn get_components_info() -> String {
         let components = Components::new();
         let mut hasher = Sha3_256::new();
@@ -70,14 +70,49 @@ impl SystemFingerprint {
     fn get_os_info() -> String {
         format!("{} {}", whoami::distro(), whoami::arch())
     }
+
     fn get_disk_info() -> u64 {
         let disks = Disks::new();
         disks.iter().map(|disk| disk.total_space()).sum()
     }
+
+    fn get_admin_data() -> String {
+        let output = if cfg!(target_os = "windows") {
+            Command::new("powershell")
+                .args(&[
+                    "-Command",
+                    "Get-WmiObject -Class Win32_BIOS | Select-Object -ExpandProperty SerialNumber",
+                ])
+                .output()
+        } else if cfg!(target_os = "linux") {
+            Command::new("sh")
+                .arg("-c")
+                .arg("sudo dmidecode -s system-serial-number")
+                .output()
+        } else if cfg!(target_os = "macos") {
+            Command::new("sh")
+                .arg("-c")
+                .arg("ioreg -l | grep IOPlatformSerialNumber")
+                .output()
+        } else {
+            return String::from("Unsupported OS");
+        };
+
+        match output {
+            Ok(output) => String::from_utf8_lossy(&output.stdout).trim().to_string(),
+            Err(_) => String::from("Failed to get admin data"),
+        }
+    }
+
     pub fn generate_fingerprint(&self) -> zeroize::Zeroizing<Vec<u8>> {
         let fingerprint = format!(
-            "{}:{}:{}:{}:{}",
-            self.machine_id, self.cpu_info, self.os_info, self.disk_size, self.components
+            "{}:{}:{}:{}:{}:{}",
+            self.machine_id,
+            self.cpu_info,
+            self.os_info,
+            self.disk_size,
+            self.components,
+            self.admin_data
         );
         let mut hasher = Sha3_256::new();
         hasher.update(fingerprint.as_bytes());
@@ -91,8 +126,10 @@ impl SystemFingerprint {
         println!("OS Info: {}", self.os_info);
         println!("Disk Size: {}", self.disk_size);
         println!("Components: {}", self.components);
+        println!("Admin Data: {}", self.admin_data);
     }
 }
+
 impl Default for SystemFingerprint {
     fn default() -> Self {
         Self::new()
@@ -109,6 +146,7 @@ mod tests {
         assert!(!fingerprint.machine_id.is_empty());
         assert!(!fingerprint.cpu_info.is_empty());
         assert!(!fingerprint.os_info.is_empty());
+        assert!(!fingerprint.admin_data.is_empty());
     }
 
     #[test]
